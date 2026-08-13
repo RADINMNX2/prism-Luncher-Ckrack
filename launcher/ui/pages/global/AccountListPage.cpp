@@ -45,6 +45,7 @@
 #include <QDebug>
 
 #include "ui/dialogs/ChooseOfflineNameDialog.h"
+#include "ui/dialogs/CrackedAccountDialog.h"
 #include "ui/dialogs/CustomMessageBox.h"
 #include "ui/dialogs/MSALoginDialog.h"
 
@@ -140,14 +141,6 @@ void AccountListPage::on_actionAddMicrosoft_triggered()
 
 void AccountListPage::on_actionAddOffline_triggered()
 {
-    if (!m_accounts->anyAccountIsValid()) {
-        QMessageBox::warning(this, tr("Error"),
-                             tr("You must add a Microsoft account that owns Minecraft before you can add an offline account."
-                                "<br><br>"
-                                "If you have lost your account you can contact Microsoft for support."));
-        return;
-    }
-
     ChooseOfflineNameDialog dialog(tr("Please enter your desired username to add your offline account."), this);
     if (dialog.exec() != QDialog::Accepted) {
         return;
@@ -158,6 +151,30 @@ void AccountListPage::on_actionAddOffline_triggered()
         m_accounts->addAccount(account);
         if (m_accounts->count() == 1) {
             m_accounts->setDefaultAccount(account);
+        }
+    }
+}
+
+void AccountListPage::on_actionAddCracked_triggered()
+{
+    auto account = CrackedAccountDialog::createCrackedAccount(this);
+    if (account) {
+        m_accounts->addAccount(account);
+        if (m_accounts->count() == 1) {
+            m_accounts->setDefaultAccount(account);
+        }
+    }
+}
+
+void AccountListPage::on_actionEditCracked_triggered()
+{
+    QModelIndexList selection = ui->listView->selectionModel()->selectedIndexes();
+    if (selection.size() > 0) {
+        QModelIndex selected = selection.first();
+        MinecraftAccountPtr account = selected.data(AccountList::PointerRole).value<MinecraftAccountPtr>();
+        if (account->isOffline()) {
+            CrackedAccountDialog dialog(account, this);
+            dialog.exec();
         }
     }
 }
@@ -209,6 +226,7 @@ void AccountListPage::updateButtonStates()
     bool hasSelection = !selection.empty();
     bool accountIsReady = false;
     bool accountIsOnline = false;
+    bool accountIsOffline = false;
     bool accountCanMoveUp = false;
     bool accountCanMoveDown = false;
     if (hasSelection) {
@@ -216,6 +234,7 @@ void AccountListPage::updateButtonStates()
         MinecraftAccountPtr account = selected.data(AccountList::PointerRole).value<MinecraftAccountPtr>();
         accountIsReady = !account->isActive();
         accountIsOnline = account->accountType() != AccountType::Offline;
+        accountIsOffline = account->isOffline();
 
         accountCanMoveUp = selected.row() > 0;
         int indexOfLast = m_accounts->count() - 1;
@@ -225,6 +244,7 @@ void AccountListPage::updateButtonStates()
     ui->actionSetDefault->setEnabled(accountIsReady);
     ui->actionManageSkins->setEnabled(accountIsReady && accountIsOnline);
     ui->actionRefresh->setEnabled(accountIsReady && accountIsOnline);
+    ui->actionEditCracked->setEnabled(accountIsReady && accountIsOffline);
 
     if (m_accounts->defaultAccount().get() == nullptr) {
         ui->actionNoDefault->setEnabled(false);

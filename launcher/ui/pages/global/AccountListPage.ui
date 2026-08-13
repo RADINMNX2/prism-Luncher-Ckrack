@@ -54,6 +54,8 @@
    </attribute>
    <addaction name="actionAddMicrosoft"/>
    <addaction name="actionAddOffline"/>
+   <addaction name="actionAddCracked"/>
+   <addaction name="actionEditCracked"/>
    <addaction name="actionRefresh"/>
    <addaction name="actionRemove"/>
    <addaction name="actionSetDefault"/>
@@ -92,6 +94,22 @@
   <action name="actionAddOffline">
    <property name="text">
     <string>Add &amp;Offline</string>
+   </property>
+  </action>
+  <action name="actionAddCracked">
+   <property name="text">
+    <string>Add &amp;Cracked</string>
+   </property>
+   <property name="toolTip">
+    <string>Create an offline account with custom skin and cape</string>
+   </property>
+  </action>
+  <action name="actionEditCracked">
+   <property name="text">
+    <string>&amp;Edit Cracked</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit the name, password, skin and cape of an offline account</string>
    </property>
   </action>
   <action name="actionRefresh">

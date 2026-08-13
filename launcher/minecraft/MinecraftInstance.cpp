@@ -59,6 +59,7 @@
 #include "minecraft/launch/AutoInstallJava.h"
 #include "minecraft/launch/ClaimAccount.h"
 #include "minecraft/launch/CreateGameFolders.h"
+#include "minecraft/launch/OfflineSkinInstall.h"
 #include "minecraft/launch/EnsureAvailableMemory.h"
 #include "minecraft/launch/EnsureOfflineLibraries.h"
 #include "minecraft/launch/ExtractNatives.h"
@@ -1139,6 +1140,11 @@ LaunchTask* MinecraftInstance::createLaunchTask(AuthSessionPtr session, Minecraf
     // create the .minecraft folder and server-resource-packs (workaround for Minecraft bug MCL-3732)
     {
         process->appendStep(makeShared<CreateGameFolders>(pptr));
+    }
+
+    // install the cracked skin/cape for CustomSkinLoader (offline accounts only)
+    {
+        process->appendStep(makeShared<OfflineSkinInstall>(pptr, session));
     }
 
     if (!targetToJoin && settings()->get("JoinServerOnLaunch").toBool()) {

@@ -1,0 +1,93 @@
+name: Build Online
+
+on:
+  push:
+    branches:
+      - build-online
+  workflow_dispatch:
+
+concurrency:
+  group: build-online
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Windows MinGW-w64 (CLANG64, Release)
+    runs-on: windows-2022
+    permissions:
+      contents: read
+      actions: write
+    defaults:
+      run:
+        shell: msys2 {0}
+    env:
+      ARTIFACT_NAME: Windows-MinGW-w64-Qt6
+      BUILD_PLATFORM: official
+      BUILD_TYPE: Release
+      CMAKE_PRESET: windows_mingw
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Setup dependencies
+        id: setup-dependencies
+        uses: ./.github/actions/setup-dependencies
+        with:
+          build-type: Release
+          artifact-name: Windows-MinGW-w64
+          msystem: CLANG64
+          vcvars-arch: amd64_x86
+          qt-version: 6.10.2
+
+      - name: Configure project
+        run: |
+          cmake --preset "$CMAKE_PRESET" 2>&1 | tee configure.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Upload configure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: configure-log
+          path: |
+            configure.log
+            build/CMakeFiles/CMakeConfigureLog.yaml
+            build/CMakeFiles/CMakeError.log
+            build/CMakeCache.txt
+          if-no-files-found: warn
+
+      - name: Run build
+        run: |
+          cmake --build --preset "$CMAKE_PRESET" --config "$BUILD_TYPE" 2>&1 | tee build.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: warn
+
+      - name: Get short version
+        id: short-version
+        shell: bash
+        run: echo "version=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Package (Windows)
+        uses: ./.github/actions/package/windows
+        env:
+          CI_HAS_ACCESS_TO_AZURE: ""
+        with:
+          version: ${{ steps.short-version.outputs.version }}
+          build-type: Release
+          artifact-name: Windows-MinGW-w64
+          msystem: CLANG64
+          azure-client-id: ""
+          azure-tenant-id: ""
+          azure-subscription-id: ""

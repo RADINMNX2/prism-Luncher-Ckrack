@@ -106,6 +106,10 @@ struct AccountData {
 
     AccountType type = AccountType::MSA;
 
+    //! Password for offline (cracked) accounts. Only stored locally for the user's convenience;
+    //! cracked servers authenticate passwords in-game, never here.
+    QString offlinePassword;
+
     QString msaClientID;
     Token msaToken;
     Token userToken;

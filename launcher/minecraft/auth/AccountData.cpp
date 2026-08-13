@@ -304,6 +304,11 @@ bool AccountData::resumeStateFromV3(QJsonObject data)
         msaToken = tokenFromJSONV3(data, "msa");
         userToken = tokenFromJSONV3(data, "utoken");
         mojangservicesToken = tokenFromJSONV3(data, "xrp-mc");
+    } else if (type == AccountType::Offline) {
+        auto passwordV = data.value("offlinePassword");
+        if (passwordV.isString()) {
+            offlinePassword = passwordV.toString();
+        }
     }
 
     yggdrasilToken = tokenFromJSONV3(data, "ygg");
@@ -335,6 +340,9 @@ QJsonObject AccountData::saveState() const
         tokenToJSONV3(output, mojangservicesToken, "xrp-mc");
     } else if (type == AccountType::Offline) {
         output["type"] = "Offline";
+        if (!offlinePassword.isEmpty()) {
+            output["offlinePassword"] = offlinePassword;
+        }
     }
 
     tokenToJSONV3(output, yggdrasilToken, "ygg");
