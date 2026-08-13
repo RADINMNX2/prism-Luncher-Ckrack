@@ -24,7 +24,7 @@ jobs:
         with:
           submodules: true
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
       - name: Build project
@@ -33,7 +33,7 @@ jobs:
           cmake -B build -S . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
           cmake --build build
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}"
           upload: true

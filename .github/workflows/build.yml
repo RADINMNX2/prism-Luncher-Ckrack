@@ -38,6 +38,7 @@ jobs:
       id-token: write
       # Required for vcpkg binary cache
       packages: write
+      security-events: write
 
     strategy:
       fail-fast: false
@@ -103,10 +104,15 @@ jobs:
       # SETUP
       ##
 
+
       - name: Checkout
         uses: actions/checkout@v6
         with:
           submodules: true
+
+      - name: Install ECM (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y extra-cmake-modules
 
       - name: Setup dependencies
         id: setup-dependencies
