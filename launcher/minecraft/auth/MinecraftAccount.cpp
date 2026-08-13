@@ -89,6 +89,61 @@ MinecraftAccountPtr MinecraftAccount::createOffline(const QString& username)
     return account;
 }
 
+void MinecraftAccount::setOfflinePassword(const QString& password)
+{
+    data.offlinePassword = password;
+    emit changed();
+}
+
+void MinecraftAccount::setOfflineName(const QString& username)
+{
+    data.minecraftProfile.name = username;
+    data.minecraftProfile.id = uuidFromUsername(username).toString(QUuid::Id128);
+    data.yggdrasilToken.extra["userName"] = username;
+    emit changed();
+}
+
+void MinecraftAccount::setOfflineSkinData(const QByteArray& pngData, const QString& variant)
+{
+    auto& skin = data.minecraftProfile.skin;
+    skin.data = pngData;
+    skin.variant = variant;
+    skin.id = pngData.isEmpty() ? QString() : "offline-skin";
+    skin.url = pngData.isEmpty() ? QString() : "https://textures.minecraft.net";
+    emit changed();
+}
+
+QByteArray MinecraftAccount::offlineCapeData() const
+{
+    auto capeIt = data.minecraftProfile.capes.constFind(data.minecraftProfile.currentCape);
+    if (capeIt != data.minecraftProfile.capes.cend()) {
+        return capeIt->data;
+    }
+    return {};
+}
+
+void MinecraftAccount::setOfflineCapeData(const QByteArray& pngData)
+{
+    auto& capes = data.minecraftProfile.capes;
+    if (pngData.isEmpty()) {
+        auto capeIt = capes.constFind(data.minecraftProfile.currentCape);
+        if (capeIt != capes.cend()) {
+            capes.erase(data.minecraftProfile.capes.constFind(data.minecraftProfile.currentCape));
+        }
+        data.minecraftProfile.currentCape = QString();
+        emit changed();
+        return;
+    }
+    const QString capeId = "offline-cape";
+    auto& cape = capes[capeId];
+    cape.id = capeId;
+    cape.url = "https://textures.minecraft.net";
+    cape.alias = "Custom Cape";
+    cape.data = pngData;
+    data.minecraftProfile.currentCape = capeId;
+    emit changed();
+}
+
 QJsonObject MinecraftAccount::saveToJson() const
 {
     return data.saveState();

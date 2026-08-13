@@ -116,6 +116,49 @@ class MinecraftAccount : public QObject, public Usable {
 
     AccountType accountType() const noexcept { return data.type; }
 
+    bool isOffline() const { return data.type == AccountType::Offline; }
+
+    /*!
+     * Returns the locally stored password of an offline (cracked) account.
+     */
+    QString offlinePassword() const { return data.offlinePassword; }
+
+    /*!
+     * Sets the locally stored password of an offline (cracked) account.
+     * This is only a local record; cracked servers authenticate passwords in-game.
+     */
+    void setOfflinePassword(const QString& password);
+
+    /*!
+     * Renames an offline (cracked) account, updating its derived UUID.
+     */
+    void setOfflineName(const QString& username);
+
+    /*!
+     * Returns the raw PNG bytes of the account's custom skin, or an empty array if none is set.
+     */
+    QByteArray offlineSkinData() const { return data.minecraftProfile.skin.data; }
+
+    /*!
+     * Returns the skin model variant ("slim" for Alex, "classic" otherwise).
+     */
+    QString offlineSkinVariant() const { return data.minecraftProfile.skin.variant; }
+
+    /*!
+     * Sets the custom skin PNG for an offline (cracked) account.
+     */
+    void setOfflineSkinData(const QByteArray& pngData, const QString& variant);
+
+    /*!
+     * Returns the raw PNG bytes of the account's custom cape, or an empty array if none is set.
+     */
+    QByteArray offlineCapeData() const;
+
+    /*!
+     * Sets the custom cape PNG for an offline (cracked) account. Pass an empty array to remove it.
+     */
+    void setOfflineCapeData(const QByteArray& pngData);
+
     bool ownsMinecraft() const { return data.type != AccountType::Offline && data.minecraftEntitlement.ownsMinecraft; }
 
     bool hasProfile() const { return data.profileId().size() != 0; }
