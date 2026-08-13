@@ -74,7 +74,7 @@ void OfflineSkinInstall::executeTask()
         }
 
         writeMergedConfig(cslDir);
-    } catch (const FileSystemException& e) {
+    } catch (const FS::FileSystemException& e) {
         emit logLine(tr("Couldn't install the cracked skin/cape: %1").arg(e.cause()), MessageLevel::Error);
         emitFailed(tr("Couldn't install the cracked skin/cape."));
         return;
@@ -101,7 +101,7 @@ void OfflineSkinInstall::writeMergedConfig(const QString& cslDir)
                 loadlist = root.value("loadlist").toArray();
             }
         }
-    } catch (const FileSystemException&) {
+    } catch (const FS::FileSystemException&) {
         // no existing config, start fresh
     }
 
