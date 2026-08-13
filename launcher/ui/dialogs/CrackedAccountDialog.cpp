@@ -31,6 +31,8 @@
 #include <QRegularExpressionValidator>
 #include <QVBoxLayout>
 
+#include <utility>
+
 namespace {
 
 const QString s_dialogStyle = R"(

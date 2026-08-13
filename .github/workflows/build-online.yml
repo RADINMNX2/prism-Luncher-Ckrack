@@ -62,7 +62,17 @@ jobs:
           if-no-files-found: warn
 
       - name: Run build
-        run: cmake --build --preset "$CMAKE_PRESET" --config "$BUILD_TYPE"
+        run: |
+          cmake --build --preset "$CMAKE_PRESET" --config "$BUILD_TYPE" 2>&1 | tee build.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: warn
 
       - name: Get short version
         id: short-version
