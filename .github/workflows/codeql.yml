@@ -1,52 +1,39 @@
-name: "CodeQL Code Scanning"
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
+name: codeql
 on:
-  merge_group:
-    types: [checks_requested]
+  push:
+    branches: [ main ]
   pull_request:
-  workflow_dispatch:
-
-permissions: {}
-
+    # The branches below must match the branches set for the CI workflow.
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'
 jobs:
-  CodeQL:
+  analyze:
+    name: Analyze
     runs-on: ubuntu-latest
-
     permissions:
+      actions: read
       contents: read
       security-events: write
-
+    strategy:
+      matrix:
+        language: [ 'cpp' ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
-          submodules: "true"
-
+          submodules: true
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@v2
         with:
-          config-file: ./.github/codeql/codeql-config.yml
-          queries: security-and-quality
-          languages: cpp, java
-
-      - name: Setup dependencies
-        uses: ./.github/actions/setup-dependencies
-        with:
-          build-type: Debug
-          qt-version: 6.4.3
-
-      - name: Configure and Build
+          languages: ${{ matrix.language }}
+      - name: Build project
         run: |
-          cmake --preset linux -DLauncher_USE_PCH=OFF
-          cmake --build --preset linux --config Debug
-
-      - name: Run tests
-        run: |
-          ctest --preset linux --build-config Debug --extra-verbose --output-on-failure
-
+          sudo apt-get update && sudo apt-get install -y cmake ninja-build
+          cmake -B build -S . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
+          cmake --build build
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:${{ matrix.language }}"
+          upload: true

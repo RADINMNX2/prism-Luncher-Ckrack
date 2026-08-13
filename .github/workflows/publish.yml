@@ -1,25 +1,35 @@
-name: Publish
-
+name: publish
 on:
-  release:
-    types: [ released ]
-
-permissions: {}
-
+  push:
+    tags:
+      - 'v*.*.*'
 jobs:
-  winget:
-    name: Winget
-
-    permissions:
-      contents: read
-
-    runs-on: ubuntu-slim
-
+  publish:
+    runs-on: ubuntu-latest
     steps:
-      - name: Publish on Winget
-        uses: vedantmgoyal2009/winget-releaser@v2
+      - uses: actions/checkout@v4
         with:
-          identifier: PrismLauncher.PrismLauncher
-          version: ${{ github.event.release.tag_name }}
-          installers-regex: 'PrismLauncher-Windows-MSVC(:?-arm64|-Legacy)?-Setup-.+\.exe$'
-          token: ${{ secrets.WINGET_TOKEN }}
+          submodules: true
+      - name: Set up Java (for Maven Central publishing if needed)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Build artifacts
+        run: |
+          sudo apt-get update && sudo apt-get install -y cmake ninja-build
+          cmake -B build -S . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
+          cmake --build build --config Release
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: "Automated release for ${{ github.ref_name }}"
+          draft: false
+          prerelease: false
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: prismlauncher-binaries
+          path: build/**/prismlauncher*   
