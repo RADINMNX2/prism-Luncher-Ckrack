@@ -53,19 +53,35 @@ void OfflineSkinInstall::executeTask()
     }
 
     const QString username = m_session->player_name;
+    const QString variant = account->offlineSkinVariant();
+
+    bool installed = installCustomSkinLoader(instance.get(), username, skinData, capeData, variant);
+    installed = installOptiFineFiles(instance.get(), username, skinData, capeData) || installed;
+
+    if (installed) {
+        emit logLine(tr("Installed cracked skin/cape for '%1' (CustomSkinLoader + OptiFine).").arg(username),
+                     MessageLevel::Launcher);
+    } else {
+        emit logLine(tr("Couldn't install the cracked skin/cape for '%1'.").arg(username), MessageLevel::Error);
+    }
+    emitSucceeded();
+}
+
+bool OfflineSkinInstall::installCustomSkinLoader(MinecraftInstance* instance, const QString& username, const QByteArray& skinData,
+                                                 const QByteArray& capeData, const QString& variant)
+{
     const QString cslDir = FS::PathCombine(instance->gameRoot(), "config", "customskinloader");
     const QString modSkinsDir = FS::PathCombine(cslDir, "ModSkins");
 
     if (!FS::ensureFolderPathExists(modSkinsDir)) {
         emit logLine(tr("Failed to create the CustomSkinLoader folder; skin and cape won't be applied."), MessageLevel::Error);
-        emitFailed(tr("Couldn't create the CustomSkinLoader folder."));
-        return;
+        return false;
     }
 
     try {
         if (!skinData.isEmpty()) {
             FS::write(FS::PathCombine(modSkinsDir, username + ".png"), skinData);
-            if (account->offlineSkinVariant() == "slim") {
+            if (variant == QLatin1String("slim")) {
                 FS::write(FS::PathCombine(modSkinsDir, username + ".json"), QByteArrayLiteral("{\"model\":\"slim\"}"));
             }
         }
@@ -75,13 +91,36 @@ void OfflineSkinInstall::executeTask()
 
         writeMergedConfig(cslDir);
     } catch (const FS::FileSystemException& e) {
-        emit logLine(tr("Couldn't install the cracked skin/cape: %1").arg(e.cause()), MessageLevel::Error);
-        emitFailed(tr("Couldn't install the cracked skin/cape."));
-        return;
+        emit logLine(tr("Couldn't install the CustomSkinLoader skin/cape: %1").arg(e.cause()), MessageLevel::Error);
+        return false;
     }
 
-    emit logLine(tr("Installed cracked skin and cape for '%1' (CustomSkinLoader).").arg(username), MessageLevel::Launcher);
-    emitSucceeded();
+    return true;
+}
+
+bool OfflineSkinInstall::installOptiFineFiles(MinecraftInstance* instance, const QString& username, const QByteArray& skinData,
+                                              const QByteArray& capeData)
+{
+    bool installed = false;
+    try {
+        if (!skinData.isEmpty()) {
+            const QString skinsDir = FS::PathCombine(instance->gameRoot(), "skins");
+            if (FS::ensureFolderPathExists(skinsDir)) {
+                FS::write(FS::PathCombine(skinsDir, username + ".png"), skinData);
+                installed = true;
+            }
+        }
+        if (!capeData.isEmpty()) {
+            const QString capesDir = FS::PathCombine(instance->gameRoot(), "capes");
+            if (FS::ensureFolderPathExists(capesDir)) {
+                FS::write(FS::PathCombine(capesDir, username + ".png"), capeData);
+                installed = true;
+            }
+        }
+    } catch (const FS::FileSystemException& e) {
+        emit logLine(tr("Couldn't install the OptiFine skin/cape: %1").arg(e.cause()), MessageLevel::Error);
+    }
+    return installed;
 }
 
 void OfflineSkinInstall::writeMergedConfig(const QString& cslDir)
