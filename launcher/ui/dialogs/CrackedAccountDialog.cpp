@@ -144,6 +144,7 @@ QLabel#bannerText {
 )";
 
 const QRegularExpression s_usernameRegExp("^[A-Za-z0-9_]{3,16}$");
+}  // namespace
 
 QPixmap CrackedAccountDialog::imageFromData(const QByteArray& pngData)
 {
