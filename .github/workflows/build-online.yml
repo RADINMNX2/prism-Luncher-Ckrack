@@ -45,7 +45,21 @@ jobs:
           qt-version: 6.10.2
 
       - name: Configure project
-        run: cmake --preset "$CMAKE_PRESET"
+        run: |
+          cmake --preset "$CMAKE_PRESET" 2>&1 | tee configure.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Upload configure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: configure-log
+          path: |
+            configure.log
+            build/CMakeFiles/CMakeConfigureLog.yaml
+            build/CMakeFiles/CMakeError.log
+            build/CMakeCache.txt
+          if-no-files-found: warn
 
       - name: Run build
         run: cmake --build --preset "$CMAKE_PRESET" --config "$BUILD_TYPE"
